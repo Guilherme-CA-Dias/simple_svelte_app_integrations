@@ -1,20 +1,19 @@
+# Dependencies
 node_modules
 
-.svelte-kit
-
-# Output
+# Build output
+/build
+/.svelte-kit
 .output
 .vercel
 .netlify
 .wrangler
-/.svelte-kit
-/build
 
-# OS
+# OS files
 .DS_Store
 Thumbs.db
 
-# Env
+# Environment variables
 .env
 .env.*
 !.env.example

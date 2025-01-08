@@ -9,10 +9,17 @@ interface TokenData {
   };
 }
 
-const WORKSPACE_KEY = env.VITE_WORKSPACE_KEY;
-const WORKSPACE_SECRET = env.VITE_WORKSPACE_SECRET;
-
 export function generateToken(customerId: string, customerName: string): string {
+  // Debug environment variables
+  console.log('Environment check:', {
+    key: env.VITE_WORKSPACE_KEY,
+    hasSecret: !!env.VITE_WORKSPACE_SECRET
+  });
+
+  if (!env.VITE_WORKSPACE_KEY || !env.VITE_WORKSPACE_SECRET) {
+    throw new Error('Missing required environment variables');
+  }
+
   const tokenData: TokenData = {
     id: customerId,
     name: customerName,
@@ -21,11 +28,20 @@ export function generateToken(customerId: string, customerName: string): string 
     },
   };
 
-  const options = {
-    issuer: WORKSPACE_KEY,
+  const options: jwt.SignOptions = {
+    issuer: env.VITE_WORKSPACE_KEY,
     expiresIn: 7200,
-    algorithm: 'HS512' as const,
+    algorithm: 'HS512',
   };
 
-  return jwt.sign(tokenData, WORKSPACE_SECRET, options);
+  try {
+    return jwt.sign(
+      tokenData, 
+      String(env.VITE_WORKSPACE_SECRET), 
+      options
+    );
+  } catch (error) {
+    console.error('JWT signing error:', error);
+    throw error;
+  }
 }

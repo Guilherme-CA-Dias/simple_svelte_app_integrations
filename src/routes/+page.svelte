@@ -5,6 +5,7 @@
   
     let integrations: any[] = [];
     let integrationApp: IntegrationApp | undefined;
+    let error: string | null = null;
   
     // Simulated customer information
     const customerId = '12345';
@@ -18,18 +19,23 @@
   
         if (data.token) {
           const token = data.token;
+          console.log('Token received:', token);
   
           // Initialize Integration App SDK
           integrationApp = initializeIntegrationApp(token);
+          console.log('Integration app initialized:', integrationApp);
   
           // Fetch available integrations
           const { items } = await integrationApp.integrations.find();
+          console.log('Integrations found:', items);
           integrations = items;
         } else {
-          console.error('Failed to retrieve token:', data.error || 'Unknown error');
+          error = data.error || 'Unknown error';
+          console.error('Failed to retrieve token:', error);
         }
-      } catch (error) {
-        console.error('Error during initialization:', error);
+      } catch (err) {
+        error = err instanceof Error ? err.message : 'Unknown error';
+        console.error('Error during initialization:', err);
       }
     });
   
