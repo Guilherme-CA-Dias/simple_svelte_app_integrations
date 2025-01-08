@@ -13,7 +13,7 @@ A SvelteKit application demonstrating integration with integration.app services.
 1. Clone the repository:
 ```bash
 git clone <repository-url>
-cd fluincy-app
+cd <repository_path>
 ```
 
 2. Install dependencies:
