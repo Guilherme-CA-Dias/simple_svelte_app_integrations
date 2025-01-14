@@ -1,9 +1,10 @@
 <script lang="ts">
     import { onMount } from 'svelte';
     import { initializeIntegrationApp } from '$lib/integrationApp';
+    import { connectionStatus, integrations } from '$lib/stores';
     import type { IntegrationApp } from '$lib/types';
+    import IntegrationCard from '$lib/components/IntegrationCard.svelte';
   
-    let integrations: any[] = [];
     let integrationApp: IntegrationApp | undefined;
     let error: string | null = null;
   
@@ -12,69 +13,66 @@
     const customerName = 'John Doe';
   
     onMount(async () => {
-      try {
-        // Fetch the token from the API endpoint
-        const response = await fetch(`/api/generate-token?id=${customerId}&name=${customerName}`);
-        const data = await response.json();
-  
-        if (data.token) {
-          const token = data.token;
-          console.log('Token received:', token);
-  
-          // Initialize Integration App SDK
-          integrationApp = initializeIntegrationApp(token);
-          console.log('Integration app initialized:', integrationApp);
-  
-          // Fetch available integrations
-          const { items } = await integrationApp.integrations.find();
-          console.log('Integrations found:', items);
-          integrations = items;
-        } else {
-          error = data.error || 'Unknown error';
-          console.error('Failed to retrieve token:', error);
+        let error;
+        try {
+            // Fetch the token from the API endpoint
+            const response = await fetch(`/api/generate-token?id=${customerId}&name=${customerName}`);
+            const data = await response.json();
+
+            if (data.token) {
+                const token = data.token;
+                console.log('Token received:', token);
+
+                // Initialize Integration App SDK
+                integrationApp = initializeIntegrationApp(token);
+                console.log('Integration app initialized:', integrationApp);
+
+                // Fetch available integrations
+                const { items } = await integrationApp.integrations.find();
+                console.log('Integrations found:', items);
+                integrations.update((current) => ({ ...current, items }));
+
+            } else {
+                error = data.error || 'Unknown error';
+                console.error('Failed to retrieve token:', error);
+                connectionStatus.set('Failed to retrieve token');
+            }
+        } catch (err) {
+            error = err instanceof Error ? err.message : 'Unknown error';
+            console.error('Error during initialization:', err);
+            connectionStatus.set('Error during initialization');
         }
-      } catch (err) {
-        error = err instanceof Error ? err.message : 'Unknown error';
-        console.error('Error during initialization:', err);
-      }
     });
-  
+
     function connectIntegration(key: string) {
-      if (integrationApp) {
-        integrationApp.integration(key).open();
-      }
+        if (integrationApp) {
+            integrationApp.integration(key).open();
+        }
     }
-  </script>
-  
-  <style>
+</script>
+
+<style>
     .integration-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 20px;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        padding: 20px;
     }
-    .integration-item {
-      text-align: center;
-    }
-    img {
-      width: 60px;
-      height: 60px;
-      border-radius: 8px;
-    }
-  </style>
-  
-  <div>
-    <h1>Integration App</h1>
-    <p>Below are the available integrations:</p>
-  
+</style>
+
+<section class="[ u-grid-container stack ]">
+    <h1 class="[ h3 ]">Integrations</h1>
     <div class="integration-list">
-      {#each integrations as integration (integration.id)}
-        <div class="integration-item">
-          <button on:click={() => connectIntegration(integration.key)}>
-            <img src={integration.logoUri} alt={integration.name} />
-          </button>
-          <p>{integration.name}</p>
-        </div>
-      {/each}
+        {#each $integrations.items as integration (integration.id)}
+            <IntegrationCard
+                title={integration.name}
+                url={integration.infoUrl}
+                logo={integration.logoUri}
+                connectionStatus={integration.connection?.disconnected === false ? 'Connected' : 'Not Connected'}
+                connectIntegration={() => connectIntegration(integration.key)}
+                isIntegration={true}
+            />
+        {/each}
     </div>
-  </div>
+</section>
   
